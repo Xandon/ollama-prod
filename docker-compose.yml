@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ollama_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=${ALLOWED_ORIGINS:-*}
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ollama_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-443}:443"
+      - "${NGINX_HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/templates:/etc/nginx/templates
+      - ./certs:/etc/nginx/certs
+      - ./logs:/var/log/nginx
+    networks:
+      - ollama_network
+    depends_on:
+      - ollama
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ollama_network:
+    driver: bridge
+
+volumes:
+  ollama_data:
+    driver: local 
