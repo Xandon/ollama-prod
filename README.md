@@ -88,6 +88,128 @@ Before starting, ensure you have:
 5. Verify the deployment:
    Test the health endpoint to ensure everything is running correctly.
 
+## Windows Installation
+
+If you're installing on Windows, follow these modified instructions:
+
+### Prerequisites for Windows
+
+Before starting, ensure you have:
+
+- Docker Desktop for Windows
+- Docker Compose (included with Docker Desktop)
+- A domain name pointing to your server
+- Git for Windows
+- Windows Terminal (recommended) or PowerShell
+
+### Windows Setup Steps
+
+1. Clone the repository and create project structure:
+
+   ```powershell
+   # Clone the repository
+   git clone https://github.com/Xandon/ollama-prod.git
+   
+   # Navigate to the project directory
+   cd ollama-prod
+   
+   # Create the directory structure (Windows PowerShell)
+   mkdir -p nginx/conf.d, nginx/templates, scripts, config, certs, backups, docs/deployment, docs/security, docs/monitoring
+   ```
+
+2. Configure environment variables:
+   
+   ```powershell
+   # Copy the environment template
+   copy .env.template .env
+   
+   # Edit .env file with your preferred text editor
+   notepad .env
+   # or
+   code .env  # if using VS Code
+   ```
+
+3. Generate SSL certificates:
+   - Install certbot using Windows Subsystem for Linux (WSL2) or
+   - Use Windows-compatible alternatives like win-acme
+   - Certificates can also be generated on a Linux machine and copied over
+
+4. Start the services:
+   ```powershell
+   docker-compose up -d
+   ```
+
+5. Verify the deployment:
+   ```powershell
+   curl http://localhost:11434/api/health
+   ```
+
+### Windows-Specific Considerations
+
+#### File Permissions
+- Windows file permissions work differently from Unix systems
+- Ensure proper access rights for Docker volume mounts
+- Use Windows ACLs to secure sensitive files
+
+#### Path Formatting
+- Use forward slashes (`/`) in Docker and git configurations
+- Windows environment variables use different syntax: `%VARIABLE%` instead of `$VARIABLE`
+
+#### Docker Desktop Settings
+1. Enable WSL 2 based engine
+2. Allocate sufficient resources in Docker Desktop settings
+3. Ensure shared drives are properly configured
+
+### Common Windows Issues
+
+1. Line Ending Issues:
+   ```powershell
+   # Configure Git to handle line endings
+   git config --global core.autocrlf true
+   ```
+
+2. Volume Mount Problems:
+   - Ensure Docker Desktop has permission to access your drives
+   - Check Docker Desktop > Settings > Resources > File Sharing
+
+3. WSL 2 Integration:
+   - Enable WSL 2 in Windows features
+   - Install WSL 2 Linux kernel update
+   - Set WSL 2 as default: `wsl --set-default-version 2`
+
+### Windows Backup Script
+
+For Windows systems, use this PowerShell script:
+
+```powershell
+# Create backup directory if it doesn't exist
+$BackupDir = "..\backups"
+$Date = Get-Date -Format "yyyyMMdd_HHmmss"
+
+New-Item -ItemType Directory -Force -Path $BackupDir
+
+# Backup Ollama data
+docker run --rm `
+    --volumes-from ollama `
+    -v ${BackupDir}:/backup `
+    alpine tar czf /backup/ollama_data_${Date}.tar.gz /root/.ollama
+
+# Backup Nginx configuration
+Compress-Archive -Path ..\nginx\conf.d\*, ..\nginx\templates\* `
+    -DestinationPath $BackupDir\nginx_conf_${Date}.zip -Force
+
+# Backup SSL certificates
+Compress-Archive -Path ..\certs\* `
+    -DestinationPath $BackupDir\certs_${Date}.zip -Force
+
+# Cleanup old backups (keep last 7 days)
+Get-ChildItem $BackupDir | Where-Object {
+    $_.LastWriteTime -lt (Get-Date).AddDays(-7)
+} | Remove-Item
+
+Write-Host "Backup completed: $Date"
+```
+
 ## Configuration
 
 ### Environment Variables
