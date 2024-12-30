@@ -35,7 +35,43 @@ Before starting, ensure you have:
 ## Installation
 
 1. Clone the repository and create project structure:
-   First, clone the repository to your server and run the setup script.
+
+   ```bash
+   # Clone the repository
+   git clone https://github.com/Xandon/ollama-prod.git
+   
+   # Navigate to the project directory
+   cd ollama-prod
+   
+   # Make the setup script executable
+   chmod +x create_project.sh
+   
+   # Run the setup script to create the directory structure
+   ./create_project.sh
+   ```
+
+   This will create the following directory structure:
+   ```
+   ollama-prod/
+   ├── nginx/
+   │   ├── conf.d/          # Nginx configuration files
+   │   └── templates/       # Nginx template files
+   ├── scripts/            # Utility scripts
+   ├── config/            # Configuration files
+   ├── certs/             # SSL certificates
+   ├── backups/           # Backup storage
+   └── docs/              # Documentation
+       ├── deployment/    # Deployment guides
+       ├── security/      # Security documentation
+       └── monitoring/    # Monitoring guides
+   ```
+
+   The `create_project.sh` script automatically sets up all necessary directories for:
+   - Nginx configuration and templates
+   - SSL certificates
+   - Backup storage
+   - Documentation
+   - Scripts and utilities
 
 2. Configure environment variables:
    Copy the template file .env.template to .env and edit it with your settings:
